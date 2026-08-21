@@ -1,0 +1,9 @@
+:80 {
+  route {
+    reverse_proxy /health api:3000
+    reverse_proxy /api/* api:3000
+    root * /srv
+    try_files {path} /index.html
+    file_server
+  }
+}

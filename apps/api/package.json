@@ -1,0 +1,25 @@
+{
+  "name": "@follow115/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc --build",
+    "start": "node dist/server.js",
+    "test": "node --import tsx --test src/**/*.test.ts",
+    "db:migrate": "tsx src/db/migrate.ts"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.0.1",
+    "@follow115/contracts": "*",
+    "fastify": "^5.3.3",
+    "pg": "^8.16.0",
+    "pg-boss": "^10.1.5",
+    "undici": "^7.29.0"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.15.4",
+    "tsx": "^4.20.3"
+  }
+}

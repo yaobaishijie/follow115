@@ -1,0 +1,59 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: { context: ., dockerfile: docker/api.Dockerfile }
+    restart: unless-stopped
+    env_file: ${ENV_FILE:-.env}
+    depends_on: { postgres: { condition: service_healthy } }
+    expose: ["3000"]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  # 独立代理服务；配置沿用用户现有 CloudSaver 的 Mihomo 目录。
+  # 不设置 container_name，避免与正在运行的 CloudSaver 实例冲突。
+  clash:
+    image: metacubex/mihomo:latest
+    restart: unless-stopped
+    volumes:
+      - ${CLASH_CONFIG_DIR:-/Volumes/sansung/docker/cloudsaver/clash}:/root/.config/mihomo
+
+  web:
+    build: { context: ., dockerfile: docker/web.Dockerfile }
+    restart: unless-stopped
+    depends_on: { api: { condition: service_healthy } }
+    ports: ["${WEB_PORT:-8080}:80"]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  backup:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    env_file: ${ENV_FILE:-.env}
+    depends_on: { postgres: { condition: service_healthy } }
+    volumes: ["./docker/backup.sh:/backup.sh:ro", "backup_data:/backups"]
+    command: ["/bin/sh", "-c", "while true; do /backup.sh; sleep 86400; done"]
+
+volumes:
+  postgres_data:
+  backup_data:

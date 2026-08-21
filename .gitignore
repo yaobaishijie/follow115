@@ -1,0 +1,22 @@
+node_modules
+dist
+.env
+.DS_Store
+coverage
+data/postgres
+data/backups
+
+# 图片(截图等,不入库)
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.bmp
+*.tif
+*.tiff
+*.ico
+
+# 构建缓存
+*.tsbuildinfo
+
